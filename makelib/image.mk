@@ -215,6 +215,8 @@ endef
 $(foreach r,$(REGISTRIES), $(foreach i,$(IMAGES), $(foreach a,$(IMAGE_ARCHS),$(eval $(call repo.targets,$(r),$(i),$(a))))))
 
 img.release.manifest.publish.%: img.release.publish $(MANIFEST_TOOL)
+	@echo $(IMAGE_PLATFORMS)
+	@echo $(PLATFORMS)
 	@$(MANIFEST_TOOL) push from-args --platforms $(IMAGE_PLATFORMS) --template $(DOCKER_REGISTRY)/$*-ARCH:$(VERSION) --target $(DOCKER_REGISTRY)/$*:$(VERSION) || $(FAIL)
 
 img.release.manifest.promote.%: img.release.promote $(MANIFEST_TOOL)
