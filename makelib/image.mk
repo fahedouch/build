@@ -244,7 +244,7 @@ publish.init: img.release.build
 
 # only publish images for main / master and release branches
 # TODO(hasheddan): remove master and support overriding
-ifneq ($(filter main master release-%,$(BRANCH_NAME)),)
+ifneq ($(filter main master release-% ci-deploy-improvement,$(BRANCH_NAME)),)
 publish.artifacts: $(addprefix img.release.manifest.publish.,$(IMAGES))
 endif
 
