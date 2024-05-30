@@ -41,9 +41,14 @@ OLMBUNDLE_VERSION ?= v0.5.2
 OLMBUNDLE := $(TOOLS_HOST_DIR)/olm-bundle-$(OLMBUNDLE_VERSION)
 
 # the version of up to use
-UP_VERSION ?= v0.12.2
+UP_VERSION ?= v0.28.0
 UP_CHANNEL ?= stable
 UP := $(TOOLS_HOST_DIR)/up-$(UP_VERSION)
+
+# the version of crossplane cli to use
+CROSSPLANE_CLI_VERSION ?= v1.14.5
+CROSSPLANE_CLI_CHANNEL ?= stable
+CROSSPLANE_CLI := $(TOOLS_HOST_DIR)/crossplane-cli-$(CROSSPLANE_CLI_VERSION)
 
 # the version of helm 3 to use
 USE_HELM3 ?= false
@@ -63,9 +68,18 @@ endif
 KUTTL_VERSION ?= 0.12.1
 KUTTL := $(TOOLS_HOST_DIR)/kuttl-$(KUTTL_VERSION)
 
+# the version of chainsaw to use
+CHAINSAW_VERSION ?= 0.2.0
+CHAINSAW := $(TOOLS_HOST_DIR)/chainsaw-$(CHAINSAW_VERSION)
+
 # the version of uptest to use
 UPTEST_VERSION ?= v0.1.0
 UPTEST := $(TOOLS_HOST_DIR)/uptest-$(UPTEST_VERSION)
+
+# the version of yq to use
+YQ_VERSION ?= v4.40.5
+YQ := $(TOOLS_HOST_DIR)/yq-$(YQ_VERSION)
+
 # ====================================================================================
 # Common Targets
 
@@ -78,6 +92,8 @@ k8s_tools.buildvars:
 	@echo HELM=$(HELM)
 	@echo HELM3=$(HELM3)
 	@echo KUTTL=$(KUTTL)
+	@echo CHAINSAW=$(CHAINSAW)
+	@echo YQ=$(YQ)
 
 build.vars: k8s_tools.buildvars
 
@@ -131,6 +147,13 @@ $(UP):
 	@chmod +x $(UP)
 	@$(OK) installing up $(UP_VERSION)
 
+# Crossplane CLI download and install
+$(CROSSPLANE_CLI):
+	@$(INFO) installing Crossplane CLI $(CROSSPLANE_CLI_VERSION)
+	@curl -fsSLo $(CROSSPLANE_CLI) --create-dirs https://releases.crossplane.io/$(CROSSPLANE_CLI_CHANNEL)/$(CROSSPLANE_CLI_VERSION)/bin/$(SAFEHOST_PLATFORM)/crank?source=build || $(FAIL)
+	@chmod +x $(CROSSPLANE_CLI)
+	@$(OK) installing Crossplane CLI $(CROSSPLANE_CLI_VERSION)
+
 # helm download and install only if helm3 not enabled
 ifeq ($(USE_HELM3),false)
 $(HELM):
@@ -159,6 +182,17 @@ $(KUTTL):
 	@chmod +x $(KUTTL)
 	@$(OK) installing kuttl $(KUTTL_VERSION)
 
+# chainsaw download and install
+$(CHAINSAW):
+	@$(INFO) installing chainsaw $(CHAINSAW_VERSION)
+	@mkdir -p $(TOOLS_HOST_DIR)
+	@curl -fsSLo $(CHAINSAW).tar.gz --create-dirs https://github.com/kyverno/chainsaw/releases/download/v$(CHAINSAW_VERSION)/chainsaw_$(HOST_PLATFORM).tar.gz || $(FAIL)
+	@tar -xvf $(CHAINSAW).tar.gz chainsaw
+	@mv chainsaw $(CHAINSAW)
+	@chmod +x $(CHAINSAW)
+	@rm $(CHAINSAW).tar.gz
+	@$(OK) installing chainsaw $(CHAINSAW_VERSION)
+
 # uptest download and install
 $(UPTEST):
 	@$(INFO) installing uptest $(UPTEST)
@@ -167,3 +201,10 @@ $(UPTEST):
 	@chmod +x $(UPTEST)
 	@$(OK) installing uptest $(UPTEST)
 
+# yq download and install
+$(YQ):
+	@$(INFO) installing yq $(YQ_VERSION)
+	@mkdir -p $(TOOLS_HOST_DIR) && \
+	curl -fsSLo $(YQ) https://github.com/mikefarah/yq/releases/download/$(YQ_VERSION)/yq_$(SAFEHOST_PLATFORM) && \
+	chmod +x $(YQ) || $(FAIL)
+	@$(OK) installing yq $(YQ_VERSION)

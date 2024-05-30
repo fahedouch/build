@@ -13,16 +13,22 @@
 # limitations under the License.
 
 KIND_CLUSTER_NAME ?= local-dev
+CROSSPLANE_NAMESPACE ?= upbound-system
 
 CONTROLPLANE_DUMP_DIRECTORY ?= $(OUTPUT_DIR)/controlplane-dump
 
 controlplane.up: $(UP) $(KUBECTL) $(KIND)
 	@$(INFO) setting up controlplane
 	@$(KIND) get kubeconfig --name $(KIND_CLUSTER_NAME) >/dev/null 2>&1 || $(KIND) create cluster --name=$(KIND_CLUSTER_NAME)
-	@$(KUBECTL) -n upbound-system get cm universal-crossplane-config >/dev/null 2>&1 || $(UP) uxp install
-	@$(KUBECTL) -n upbound-system wait deploy crossplane --for condition=Available --timeout=120s
-	@$(OK) setting up controlplane
-
+	@$(INFO) "setting kubectl context to kind-$(KIND_CLUSTER_NAME)"
+	@$(KUBECTL) config use-context "kind-$(KIND_CLUSTER_NAME)"
+ifndef CROSSPLANE_ARGS
+	@$(INFO) setting up crossplane core without args
+	@$(KUBECTL) -n $(CROSSPLANE_NAMESPACE) get cm universal-crossplane-config >/dev/null 2>&1 || $(UP) uxp install $(UXP_VERSION) --namespace=$(CROSSPLANE_NAMESPACE) $(UXP_INSTALL_OPTS)
+else
+	@$(INFO) setting up crossplane core with args $(CROSSPLANE_ARGS)
+	@$(KUBECTL) -n $(CROSSPLANE_NAMESPACE) get cm universal-crossplane-config >/dev/null 2>&1 || $(UP) uxp install $(UXP_VERSION) --namespace=$(CROSSPLANE_NAMESPACE) $(UXP_INSTALL_OPTS) --set "args={${CROSSPLANE_ARGS}}"
+endif
 controlplane.down: $(UP) $(KUBECTL) $(KIND)
 	@$(INFO) deleting controlplane
 	@$(KIND) delete cluster --name=$(KIND_CLUSTER_NAME)
